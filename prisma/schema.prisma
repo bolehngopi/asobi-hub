@@ -14,6 +14,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GameStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id            String    @id
   name          String
@@ -25,12 +31,20 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
-  username        String?
+  username        String
   displayUsername String?
 
+  profile String?
+  website String?
+  twitter String?
+
+  games      Game[]
+  followers  Follow[] @relation("Follower")
+  followings Follow[] @relation("Following")
+
   @@unique([email])
-  @@map("user")
   @@unique([username])
+  @@map("user")
 }
 
 model Session {
@@ -76,4 +90,82 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Game {
+  id          String     @id
+  authorId    String
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  slug        String     @unique
+  description String?
+  image       String?
+  price       Int        @default(0)
+  status      GameStatus @default(DRAFT)
+  genreId     String?
+  genre       Genre?     @relation(fields: [genreId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+
+  versions GameVersion[]
+  tags     GameTag[]
+
+  @@map("game")
+}
+
+model GameVersion {
+  id          String   @id
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  version     String
+  fileUrl     String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  @@map("game_version")
+}
+
+model Genre {
+  id          String  @id
+  name        String  @unique
+  description String?
+  slug        String  @unique
+
+  Game Game[]
+
+  @@map("genre")
+}
+
+model Tag {
+  id   String @id
+  name String @unique
+  slug String @unique
+
+  games GameTag[]
+
+  @@map("tag")
+}
+
+model GameTag {
+  gameId String
+  tagId  String
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([gameId, tagId])
+  @@map("game_tag")
+}
+
+model Follow {
+  id          String @id
+  followerId  String
+  followingId String
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follow")
 }

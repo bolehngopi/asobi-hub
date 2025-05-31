@@ -6,18 +6,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { authClient } from "@/lib/auth-client"
-import { Checkbox } from "./ui/checkbox"
 import Link from 'next/link'
 import { toast } from "sonner";
 
-export function LoginForm({
+type LoginFormProps = React.ComponentProps<"form"> & {
+  callbackUrl?: string | undefined;
+}
+
+export function RegisterForm({
   className,
+  callbackUrl,
   ...props
-}: React.ComponentProps<"form">) {
+}: LoginFormProps) {
   const [formData, setFormData] = useState({
+    name: "",
+    username: "",
     email: "",
     password: "",
-    remember: false,
+    confirmPassword: "",
+    image: "",
   })
   const [loading, setLoading] = useState(false)
 
@@ -27,17 +34,31 @@ export function LoginForm({
     setFormData(prev => ({ ...prev, [name]: val }))
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image: reader.result as string }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (loading) return
     setLoading(true)
 
-    const { error } = await authClient.signIn.email({
+    const { error } = await authClient.signUp.email({
+      name: formData.name,
+      username: formData.username,
       email: formData.email,
       password: formData.password,
-      rememberMe: formData.remember,
+      image: formData.image,
+      callbackURL: callbackUrl ?? '/',
     })
-    
+
     if (error) {
       toast.error(error.message || "An error occurred while logging in.", {
         description: "Please check your email and password and try again.",
@@ -69,17 +90,42 @@ export function LoginForm({
     <form
       className={cn("flex flex-col gap-6", className)}
       onSubmit={handleSubmit}
-      // aria-busy={loading ? true : undefined}
       {...props}
     >
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Login to your account</h1>
+        <h1 className="text-2xl font-bold">Register to your account</h1>
         <p className="text-muted-foreground text-sm text-balance">
           Enter your email below to login to your account
         </p>
       </div>
 
       <div className="grid gap-6">
+        <div className="grid gap-3">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            name="name"
+            placeholder="Your name"
+            required
+            value={formData.name}
+            onChange={handleChange}
+            disabled={loading}
+          />
+        </div>
+        <div className="grid gap-3">
+          <Label htmlFor="username">Username</Label>
+          <Input
+            id="username"
+            type="text"
+            name="username"
+            placeholder="username"
+            required
+            value={formData.username}
+            onChange={handleChange}
+            disabled={loading}
+          />
+        </div>
         <div className="grid gap-3">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -93,17 +139,8 @@ export function LoginForm({
             disabled={loading}
           />
         </div>
-
         <div className="grid gap-3">
-          <div className="flex items-center">
-            <Label htmlFor="password">Password</Label>
-            <Link
-              href="/forgot-password"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
-            >
-              Forgot your password?
-            </Link>
-          </div>
+          <Label htmlFor="password">Password</Label>
           <Input
             id="password"
             type="password"
@@ -114,31 +151,37 @@ export function LoginForm({
             disabled={loading}
           />
         </div>
-
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </Button>
-
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="remember"
-            name="remember"
-            checked={formData.remember}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, remember: checked === true }))}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+        <div className="grid gap-3">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            name="confirmPassword"
+            required
+            value={formData.confirmPassword}
+            onChange={handleChange}
             disabled={loading}
           />
-          <Label htmlFor="remember" className="text-sm">
-            Remember me
-          </Label>
         </div>
-
+        <div className="grid gap-3">
+          <Label htmlFor="image">Profile Image</Label>
+          <Input
+            id="image"
+            type="file"
+            name="image"
+            accept="image/*"
+            onChange={handleImageChange}
+            disabled={loading}
+          />
+        </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? 'Registering...' : 'Register'}
+        </Button>
         <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
           <span className="bg-background text-muted-foreground relative z-10 px-2">
             Or continue with
           </span>
         </div>
-
         <Button variant="outline" className="w-full" disabled={loading} onClick={() => handleSocialLogin("github")}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden>
             <path
@@ -146,14 +189,13 @@ export function LoginForm({
               fill="currentColor"
             />
           </svg>
-          Login with GitHub
+          Register with GitHub
         </Button>
       </div>
-
       <div className="text-center text-sm">
-        Don&apos;t have an account?{' '}
-        <Link href="/signup" className="underline underline-offset-4">
-          Sign up
+        Already have an account?{' '}
+        <Link href="/login" className="underline underline-offset-4">
+          Log in
         </Link>
       </div>
     </form>
