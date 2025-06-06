@@ -20,6 +20,11 @@ enum GameStatus {
   ARCHIVED
 }
 
+enum GameType {
+  HTML
+  DOWNLOADABLE
+}
+
 model User {
   id            String    @id
   name          String
@@ -39,8 +44,8 @@ model User {
   twitter String?
 
   games      Game[]
-  followers  Follow[] @relation("Follower")
-  followings Follow[] @relation("Following")
+  followers  Follow[] @relation("Following")
+  followings Follow[] @relation("Follower")
 
   @@unique([email])
   @@unique([username])
@@ -93,13 +98,15 @@ model Verification {
 }
 
 model Game {
-  id          String     @id
+  id          String     @id @default(cuid())
   authorId    String
   author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title       String
   slug        String     @unique
   description String?
   image       String?
+  gameType    GameType   @default(DOWNLOADABLE)
+  stars       Int        @default(0)
   price       Int        @default(0)
   status      GameStatus @default(DRAFT)
   genreId     String?
@@ -114,7 +121,7 @@ model Game {
 }
 
 model GameVersion {
-  id          String   @id
+  id          String   @id @default(cuid())
   gameId      String
   game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   version     String
@@ -127,7 +134,7 @@ model GameVersion {
 }
 
 model Genre {
-  id          String  @id
+  id          String  @id @default(cuid())
   name        String  @unique
   description String?
   slug        String  @unique
@@ -138,7 +145,7 @@ model Genre {
 }
 
 model Tag {
-  id   String @id
+  id   String @id @default(cuid())
   name String @unique
   slug String @unique
 
@@ -159,9 +166,10 @@ model GameTag {
 }
 
 model Follow {
-  id          String @id
+  id          String   @id @default(cuid())
   followerId  String
   followingId String
+  createdAt   DateTime @default(now())
 
   follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
   following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)

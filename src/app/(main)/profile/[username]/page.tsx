@@ -23,6 +23,12 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { authClient } from "@/lib/auth-client";
+import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 type RecentGame = {
   id: string;
@@ -115,58 +121,105 @@ function MainContentSkeleton() {
   );
 }
 
-function ErrorFallback() {
-  return (
-    <div className="text-center text-destructive py-10">
-      <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
-      <p>We couldn't load the profile. Please try again later.</p>
-    </div>
-  );
-}
-
 export default async function UserPage({
   params
-}: { params: { username: string } }) {
-  const { username } = params;
+}: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  // Fetch user from the database
+  console.log(session);
+
+  // Server action for follow/unfollow
+  async function handleFollowAction(formData: FormData) {
+    "use server";
+    if (!session || !session.user || !session.user.id) return;
+
+    const userId = session.user.id;
+    const action = formData.get("action");
+
+    if (typeof action !== "string" || !["follow", "unfollow"].includes(action)) return;
+
+    const targetUser = await prisma.user.findUnique({ where: { username } });
+    if (!targetUser) return;
+
+    if (action === "follow") {
+      await prisma.follow.upsert({
+        where: {
+          followerId_followingId: {
+            followerId: userId,
+            followingId: targetUser.id,
+          },
+        },
+        update: {},
+        create: {
+          followerId: userId,
+          followingId: targetUser.id,
+        },
+      });
+    } else if (action === "unfollow") {
+      await prisma.follow.deleteMany({
+        where: {
+          followerId: userId,
+          followingId: targetUser.id,
+        },
+      });
+    }
+    revalidatePath(`/profile/${username}`);
+    redirect(`/profile/${username}`);
+  }
+
   const user = await prisma.user.findUnique({
     where: { username },
     include: {
       games: true, // User's games
+      followers: {
+        include: { follower: true },
+      },
+      followings: {
+        include: { following: true },
+      },
     },
   });
 
   if (!user) {
-    return (
-      <div className="container py-10">
-        <div className="text-center text-2xl font-bold">User not found</div>
-      </div>
-    );
+    notFound();
   }
 
-  // Compute stats from available data
   const userStats = {
     totalGames: user.games.length,
-    totalPlaytime: 0, // No playtime field in schema
-    achievements: 0, // No achievements model
-    achievementPoints: 0, // No achievement points in schema
+    totalPlaytime: 0,
+    achievements: 0,
+    achievementPoints: 0,
     memberSince: user.createdAt.toLocaleDateString(),
   };
 
-  // Recent games: just use user's games (no playtime/progress fields)
   const recentGames: RecentGame[] = user.games.map((game) => ({
     id: game.id,
     title: game.title,
     image: game.image,
   }));
 
-  // Type the empty arrays for type safety
+  // Prepare followers and followings as user arrays, excluding self
+  const allFollowers = user.followers
+    .map(f => f.follower)
+    .filter(u => u.id !== user.id);
+  const allFollowings = user.followings
+    .map(f => f.following)
+    .filter(u => u.id !== user.id);
+
+  const isOwnProfile = session?.user?.id === user.id;
+  const isFollowing = Boolean(
+    session?.user &&
+    user.followers.some(
+      f => f.followerId === session.user.id && f.followingId === user.id
+    )
+  );
+
   const recentAchievements: Achievement[] = [];
   const purchaseHistory: Purchase[] = [];
 
   return (
-    <div className="container py-10 mx-auto fade-in">
+    <div className="container py-10 mx-auto px-2 fade-in">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
         <Suspense fallback={<ProfileSidebarSkeleton />}>
           <div className="md:col-span-1">
@@ -174,7 +227,7 @@ export default async function UserPage({
               <CardHeader className="text-center">
                 <div className="flex flex-col items-center space-y-2">
                   <Avatar className="h-24 w-24 border-2 border-primary/30 shadow">
-                    <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                    <AvatarImage src={user.image ?? undefined} alt={user.name || "User"} />
                     <AvatarFallback className="bg-primary/10 text-primary">
                       <User className="h-12 w-12" />
                     </AvatarFallback>
@@ -188,38 +241,94 @@ export default async function UserPage({
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Followers</span>
+                    <span className="font-medium">{allFollowers.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Following</span>
+                    <span className="font-medium">{allFollowings.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Games</span>
                     <span className="font-medium">{userStats.totalGames}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Playtime</span>
-                    <span className="font-medium">{userStats.totalPlaytime} hours</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Achievements</span>
-                    <span className="font-medium">{userStats.achievements}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Achievement Points</span>
-                    <span className="font-medium">{userStats.achievementPoints}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Member Since</span>
                     <span className="font-medium">{userStats.memberSince}</span>
                   </div>
                 </div>
+                {/* Profile action button */}
+                {session && (
+                  <form action={handleFollowAction}>
+                    <Button
+                      variant="outline"
+                      className="mt-6 w-full"
+                      type="submit"
+                      name="action"
+                      disabled={isOwnProfile}
+                      value={isFollowing ? "unfollow" : "follow"}
+                    >
+                      {isFollowing ? "Unfollow" : "Follow"}
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
+            {/* Follower/Following List */}
+            <div className="mt-6">
+              {/* Followers */}
+              <div className="mb-2 font-semibold text-sm text-muted-foreground">Followers</div>
+              {allFollowers.length > 0 ? (
+                <ul className="space-y-2">
+                  {allFollowers.slice(0, 10).map(f => (
+                    <li key={f.id} className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={f.image ?? undefined} alt={f.username} />
+                        <AvatarFallback>{f.username?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+                      </Avatar>
+                      <a href={`/profile/${f.username}`} className="hover:underline text-sm">{f.username}</a>
+                    </li>
+                  ))}
+                  {allFollowers.length > 10 && (
+                    <li className="text-xs text-muted-foreground">and {allFollowers.length - 10} more...</li>
+                  )}
+                </ul>
+              ) : (
+                <div className="text-xs text-muted-foreground">No followers yet.</div>
+              )}
+              {/* Following */}
+              <div className="mt-4 mb-2 font-semibold text-sm text-muted-foreground">Following</div>
+              {allFollowings.length > 0 ? (
+                <ul className="space-y-2">
+                  {allFollowings.slice(0, 10).map(f => (
+                    <li key={f.id} className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={f.image ?? undefined} alt={f.username} />
+                        <AvatarFallback>{f.username?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+                      </Avatar>
+                      <a href={`/profile/${f.username}`} className="hover:underline text-sm">{f.username}</a>
+                    </li>
+                  ))}
+                  {allFollowings.length > 10 && (
+                    <li className="text-xs text-muted-foreground">and {allFollowings.length - 10} more...</li>
+                  )}
+                </ul>
+              ) : (
+                <div className="text-xs text-muted-foreground">Not following anyone yet.</div>
+              )}
+            </div>
           </div>
         </Suspense>
 
         <div className="md:col-span-3 flex flex-col gap-6">
           {/* User Bio (Markdown) - Full width, before tabs */}
-          {user.profile && (
-            <div className="w-full prose prose-base prose-primary dark:prose-invert bg-background/80 rounded-lg p-6 border border-primary/10 shadow mb-2">
-              <ReactMarkdown>{user?.profile}</ReactMarkdown>
-            </div>
-          )}
+          <div className="w-full prose prose-base prose-primary dark:prose-invert bg-background/80 rounded-lg p-6 border border-dashed border-primary/10 shadow mb-2">
+            {user.profile ? (
+              <ReactMarkdown>{user.profile}</ReactMarkdown>
+            ) : (
+              <span className="text-muted-foreground italic">This user has not added a profile bio yet.</span>
+            )}
+          </div>
 
           <Suspense fallback={<MainContentSkeleton />}>
             <div className="md:col-span-3">
@@ -288,7 +397,7 @@ export default async function UserPage({
                             <div key={game.id} className="flex items-center gap-4 group hover:bg-primary/10 rounded transition-all p-2">
                               <div className="relative h-16 w-16 overflow-hidden rounded border bg-muted">
                                 <Image
-                                  src={game.image || "/file.svg"}
+                                  src={game.image || "https://placehold.co/600x400"}
                                   alt={game.title}
                                   fill
                                   className="object-cover group-hover:scale-105 transition-transform"
@@ -445,12 +554,44 @@ export default async function UserPage({
             </div>
           </Suspense>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
 
-// Add fade-in animation
-// In your globals.css or here:
-// .fade-in { animation: fadeIn 0.5s ease; }
-// @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+// Add dynamic metadata export for Next.js App Router
+export async function generateMetadata({ params }: { params: { username: string } }) {
+  // Optionally fetch user data for richer metadata
+  const username = params.username;
+  return {
+    title: `${username} | Profile | AsobiHub`,
+    description: `View the gaming profile, followers, and achievements of ${username} on AsobiHub.`,
+    openGraph: {
+      title: `${username} | Profile | AsobiHub`,
+      description: `View the gaming profile, followers, and achievements of ${username} on AsobiHub.`,
+      url: `https://asobihub.com/profile/${username}`,
+      type: 'profile',
+      siteName: 'AsobiHub',
+      images: [
+        {
+          url: '/file.svg', // fallback or use user image if available
+          width: 600,
+          height: 400,
+          alt: `${username}'s profile image`,
+        },
+      ],
+      locale: 'en_US',
+    },
+    twitter: {
+      card: 'summary',
+      title: `${username} | Profile | AsobiHub`,
+      description: `View the gaming profile, followers, and achievements of ${username} on AsobiHub.`,
+      site: '@asobihub',
+      creator: '@asobihub',
+      images: ['/file.svg'],
+    },
+    alternates: {
+      canonical: `/profile/${username}`,
+    },
+  };
+}

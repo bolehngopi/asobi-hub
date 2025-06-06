@@ -1,47 +1,125 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Star } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent
+} from "@/components/ui/hover-card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { formatter } from "@/lib/format";
+import { Prisma } from "@/generated/prisma";
 
-export function GameCard({
-  game
-}: {
+export interface GameCardProps {
+  id: string;
+  slug: string;
   title: string;
   description: string;
-  imageUrl: string;
-  href: string;
-}) {
+  price: number;
+  discountPrice?: number | null;
+  rating: number;
+  author: Prisma.UserGetPayload<{
+    select: {
+      username: true;
+      image: true;
+      createdAt: true;
+    };
+  }>;
+  coverImage: string;
+  categories: string[];
+  releaseDate: string;
+}
+
+export function GameCard({
+  slug,
+  title,
+  description,
+  price,
+  discountPrice,
+  rating,
+  coverImage,
+  categories,
+  author,
+}: GameCardProps) {
   return (
-    <Link
-      key={game.id}
-      href={`/marketplace/games/${game.slug}`}
-      className="group relative overflow-hidden rounded-lg transition-all hover:shadow-xl"
-    >
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg">
-        <Image
-          src={game.image}
-          alt={game.title}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent opacity-60" />
-        {game.discount && (
-          <div className="absolute right-2 top-2 rounded-full bg-destructive px-2 py-1 text-xs font-medium">
-            {game.discount}% OFF
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <div className="aspect-[16/9] w-full relative">
+        <Image src={coverImage} alt={title} fill className="object-cover" />
+      </div>
+      <CardHeader className="p-4 pb-0">
+        <div className="flex items-start justify-between">
+          <div>
+            <Link
+              href={`/game/${slug}`}
+              className="hover:underline"
+            >
+              <h3 className="font-semibold">{title}</h3>
+            </Link>
+            <div className="mt-1 flex items-center gap-1">
+              <Star className="h-4 w-4 fill-primary text-primary" />
+              <span className="text-sm font-medium">{rating}</span>
+            </div>
           </div>
-        )}
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 p-4">
-        <h3 className="font-semibold text-white">{game.title}</h3>
-        <div className="mt-1 flex items-center gap-2">
-          {game.discountPrice ? (
-            <>
-              <span className="font-medium text-white">${game.discountPrice}</span>
-              <span className="text-sm text-white/70 line-through">${game.price}</span>
-            </>
-          ) : (
-            <span className="font-medium text-white">${game.price}</span>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {discountPrice ? (
+              <>
+                <span className="font-medium">{discountPrice}</span>
+                <span className="text-sm text-muted-foreground line-through">
+                  {price}
+                </span>
+              </>
+            ) : (
+              <span className="font-medium">{formatter.format(price)}</span>
+            )}
+          </div>
         </div>
-      </div>
-    </Link>
+      </CardHeader>
+      <CardContent className="p-4 pt-2">
+        <p className="line-clamp-2 text-sm text-muted-foreground">
+          {description}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1">
+          {categories.map((category) => (
+            <Badge key={category} variant="secondary" className="text-xs">
+              {category}
+            </Badge>
+          ))}
+        </div>
+      </CardContent>
+      <CardFooter className="p-4 pt-0">
+        <div className="text-xs text-muted-foreground">
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <Button variant="link" asChild>
+                <Link href={`/profile/${author.username}`}>
+                  @{author.username}
+                </Link>
+              </Button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80">
+              <div className="flex justify-between gap-4">
+                <Avatar>
+                  <AvatarImage src={author.image ?? undefined} alt={author.username} />
+                  <AvatarFallback>{author.username?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+                </Avatar>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-semibold hover:underline">
+                    <Link href={`/profile/${author.username}`}>
+                      @{author.username}
+                    </Link>
+                  </h4>
+                  <div className="text-muted-foreground text-xs">
+                    Joined {new Date(author.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </div>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        </div>
+      </CardFooter>
+    </Card>
   );
 }

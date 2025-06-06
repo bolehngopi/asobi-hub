@@ -41,7 +41,7 @@ export function LoginForm({
       email: formData.email,
       password: formData.password,
       rememberMe: formData.remember,
-      callbackURL: callbackUrl ?? '/',
+      callbackURL: callbackUrl || '/',
     })
 
     if (error) {

@@ -38,7 +38,7 @@ async function findUniqueUsername(base: string): Promise<string> {
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "sqlite",
+    provider: "postgresql",
   }),
   hooks: {
     after: createAuthMiddleware(async (ctx) => {

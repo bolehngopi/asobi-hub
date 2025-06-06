@@ -16,13 +16,8 @@ export default async function AuthLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head />
-      <body>
-        <main>
-          {children}
-        </main>
-      </body>
-    </html>
+    <main>
+      {children}
+    </main>
   );
 }

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import React, { useMemo } from "react";
+import { ChevronDown } from "lucide-react";
 
 export function AuthNavClient() {
   const { data: session } = authClient.useSession();
@@ -24,7 +25,7 @@ export function AuthNavClient() {
     [pathname]
   );
   const registerUrl = "/register";
-  const profileUrl = session ? `/profile/${session.user.username}` : "/profile";
+  const profileUrl = `/profile/${session?.user.username}`;
 
   if (!session) {
     return (
@@ -40,42 +41,57 @@ export function AuthNavClient() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div className="flex items-center gap-2">
-          <Avatar className="cursor-pointer size-10">
-            <AvatarImage src={session.user.image ?? undefined} />
-            <AvatarFallback>{session.user.username}</AvatarFallback>
-          </Avatar>
-          <Link
-            href={profileUrl}
-            className="hidden md:inline-flex text-sm font-medium text-gray-800 dark:text-white hover:underline"
-          >
-            <span>Profile</span>
-          </Link>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href={profileUrl}>Profile</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <button type="button" aria-label="Subscription">
-            Subscription
-          </button>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <button
-            type="button"
-            onClick={() => authClient.signOut()}
-            aria-label="Logout"
-          >
-            Logout
-          </button>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center gap-2">
+      <Avatar className="cursor-pointer size-10">
+        <AvatarImage src={session.user.image ?? undefined} />
+        <AvatarFallback>{session.user.username}</AvatarFallback>
+      </Avatar>
+      <Link
+        href={profileUrl}
+        className="hidden md:inline-flex text-sm font-medium text-gray-800 dark:text-white hover:underline"
+      >
+        <span>{session.user.username ?? session.user.name}</span>
+      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <ChevronDown className="cursor-pointer text-gray-500 hover:text-gray-700 dark:text-white dark:hover:text-gray-300" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel>Explore</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={'/dashboard'}>My Library</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Create</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={'/dashboard'}>Dashboard</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={'/game/new'}>Upload new game</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={profileUrl}>Profile</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={'/user/settings'}>Settings</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <button
+              type="button"
+              onClick={() => authClient.signOut()}
+              aria-label="Logout"
+            >
+              Logout
+            </button>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+
   );
 }
