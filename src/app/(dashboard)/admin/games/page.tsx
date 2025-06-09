@@ -18,7 +18,7 @@ async function getPageParam(searchParams: SearchParams) {
 export default async function AdminGamesPage({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams: SearchParams;
 }) {
   const page = await getPageParam(searchParams || {});
   const skip = (page - 1) * PAGE_SIZE;
