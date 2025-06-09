@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     // Find the invoice and its transaction
     const invoice = await prisma.invoice.findUnique({
-      where: { externalId: body.external_id },
+      where: { externalId: body.external_id, AND: { status: "PENDING", amount: body.paid_amount } },
       include: {
         transaction: {
           include: { user: true },

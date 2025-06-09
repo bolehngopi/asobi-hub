@@ -3,8 +3,8 @@ import prisma from "@/lib/prisma";
 import { CheckoutSchema } from "@/lib/validators/invoice-schema";
 import { CreateInvoiceRequest } from "xendit-node/invoice/models";
 import { nanoid } from "nanoid";
-import { xenditInvoice } from "@/lib/xendit";
 import { z } from "zod";
+import { Invoice } from "@/lib/xendit";
 
 export async function POST(request: Request) {
   try {
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       return total + product.price;
     }, 0);
 
-    const orderId = `XTR-${nanoid(10)}-${nanoid(5)}-${session.user.id}`;
+    const orderId = `XTR-${nanoid(10)}-${nanoid(2)}${new Date().getTime()}`;
 
     const invoiceData: CreateInvoiceRequest = {
       externalId: orderId,
@@ -46,7 +46,6 @@ export async function POST(request: Request) {
         email: session.user.email,
       },
       currency: 'IDR',
-      description: `Order for ${session.user.name}`,
       items: products.map((product) => ({
         id: product.id,
         name: product.title,
@@ -57,12 +56,13 @@ export async function POST(request: Request) {
       failureRedirectUrl: `${process.env.BETTER_AUTH_URL}/dashboard/transactions`,
     };
 
-    const invoice = await xenditInvoice.createInvoice({
+    const invoice = await Invoice.createInvoice({
       data: invoiceData,
     });
 
     const transaction = await prisma.transaction.create({
       data: {
+        id: orderId,
         userId: session.user.id,
         totalAmount,
         status: 'PENDING',
@@ -87,7 +87,6 @@ export async function POST(request: Request) {
         invoiceUrl: invoice.invoiceUrl,
         expiryDate: new Date(invoice.expiryDate),
         paymentMethod: invoice.paymentMethod ?? "",
-        notes: invoice.description,
       },
     });
 

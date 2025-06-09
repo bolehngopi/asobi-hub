@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Asobi Hub
 
-First, run the development server:
+A game store website inspired by itc.io. Built it for my assingment. Hope you like it
+
+## Features
+
+- Light/dark mode toggle
+- Admin dashboard
+- Playing game in browser
+- Authentications
+
+## Demo
+
+https://asobi-hub.vercel.app
+
+## Tech Stack
+
+- Fullstack Framework: [Next.js](https://www.nextjs.org)
+- Authentication: [Better Auth](https://www.better-auth.com/)
+- Database: Postgres
+- Databse ORM: [Prisma](https://www.prisma.io/)
+- Payment Gateway: [Xendit](https://www.xendit.co)
+- Component Library: [shadcn](https://ui.shadcn.com/)
+
+## Deployment
+
+Before deployment, you need:
+
+1. Xendit Account and Business
+2. Database
+3. Github App or Github Oauth App
+
+After that you need to setup the [environment variable](#environment-variables) and build the project or deploy it using Vercel.
+
+>this project is built using pnpm, so you need to install pnpm first
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+  pnpm install
+  pnpm build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To run this project, you will need to add the following environment variable [example](https://github.com/bolehngopi/asobi-hub/blob/master/.env.example) to your .env file
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`DATABASE_URL` Url of the database
 
-## Learn More
+`BETTER_AUTH_SECRET`  Random value of anything
 
-To learn more about Next.js, take a look at the following resources:
+`BETTER_AUTH_URL`  Base URL of your app
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`GITHUB_CLIENT_ID`  Client id of github app
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`GITHUB_CLIENT_SECRET`  Client secret of github app
 
-## Deploy on Vercel
+`XENDIT_API_KEY`  Xendit secret key
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`XENDIT_WEBHOOK_SECRET`  Xendit webhook verification token
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Authors
+
+- [@bolehngopi](https://github.com/bolehngopi)
+
+## Feedback
+
+If you have any feedback, please consider making an issue

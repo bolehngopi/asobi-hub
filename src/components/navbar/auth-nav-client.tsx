@@ -87,16 +87,17 @@ export function AuthNavClient() {
             <Link href={profileUrl}>Profile</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={'/user/settings'}>Settings</Link>
+            <Link href={'/settings'}>Settings</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => { authClient.signOut(); return redirect('/'); }}
               aria-label="Logout"
             >
               Logout
-            </button>
+            </Button>
           </DropdownMenuItem>
           {isAdmin && (
             <>

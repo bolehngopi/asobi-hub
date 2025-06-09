@@ -29,4 +29,20 @@ export const auth = betterAuth({
       maxAge: 5 * 60
     }
   },
+  user: {
+    additionalFields: {
+      website: {
+        type: "string",
+        required: false,
+      },
+      twitter: {
+        type: "string",
+        required: false,
+      },
+      profile: {
+        type: "string",
+        required: false,
+      }
+    }
+  }
 })

@@ -1,8 +1,11 @@
 import GameForm from "@/components/forms/game-form";
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 export default async function EditGamePage({ params }: { params: Promise<{ slug: string }> }) {
+  const session = await auth.api.getSession({ headers: await headers() });
   const { slug } = await params;
   // Fetch game data from the database using Prisma
   const game = await prisma.game.findUnique({
@@ -10,6 +13,10 @@ export default async function EditGamePage({ params }: { params: Promise<{ slug:
     include: { tags: true, genre: true },
   });
   if (!game) return notFound();
+
+  if (session?.user?.id !== game.authorId) {
+    return notFound();
+  }
 
   // Transform tags to match the expected initialData shape
   const initialData = {

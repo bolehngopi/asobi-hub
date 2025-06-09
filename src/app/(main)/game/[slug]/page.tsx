@@ -8,6 +8,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { formatter } from "@/lib/format";
 import GameCartButton from "@/components/page/game-cart-button";
+import { TransactionStatus } from "@/generated/prisma/enums";
 
 export default async function GamePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -28,7 +29,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
   if (game.status !== "PUBLISHED" && (!session || !session.user || session.user.id !== game.authorId)) {
     return notFound();
   }
-
+  
   const latestVersion = game.versions[0];
 
   return (
