@@ -20,7 +20,7 @@ export default async function AdminGamesPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const page = await getPageParam(searchParams || {});
+  const page = await getPageParam(await searchParams || {});
   const skip = (page - 1) * PAGE_SIZE;
 
   const gamesWithExtra = await prisma.game.findMany({
