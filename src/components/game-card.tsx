@@ -11,43 +11,22 @@ import {
 } from "@/components/ui/hover-card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatter } from "@/lib/format";
-import { Prisma } from "@/generated/prisma";
-
-export interface GameCardProps {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  price: number;
-  discountPrice?: number | null;
-  rating: number;
-  author: Prisma.UserGetPayload<{
-    select: {
-      username: true;
-      image: true;
-      createdAt: true;
-    };
-  }>;
-  coverImage: string;
-  categories: string[];
-  releaseDate: string;
-}
+import { Game, Prisma, } from "@/generated/prisma";
 
 export function GameCard({
   slug,
   title,
   description,
   price,
-  discountPrice,
-  rating,
-  coverImage,
-  categories,
+  stars,
+  image,
+  genre,
   author,
-}: GameCardProps) {
+}: Prisma.GameGetPayload<{include: { genre: true, author: true } }>) {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="aspect-[16/9] w-full relative">
-        <Image src={coverImage} alt={title} fill className="object-cover" />
+        <Image src={image ?? "/placeholder.png"} alt={title} fill className="object-cover" />
       </div>
       <CardHeader className="p-4 pb-0">
         <div className="flex items-start justify-between">
@@ -60,20 +39,11 @@ export function GameCard({
             </Link>
             <div className="mt-1 flex items-center gap-1">
               <Star className="h-4 w-4 fill-primary text-primary" />
-              <span className="text-sm font-medium">{rating}</span>
+              <span className="text-sm font-medium">{stars}</span>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            {discountPrice ? (
-              <>
-                <span className="font-medium">{discountPrice}</span>
-                <span className="text-sm text-muted-foreground line-through">
-                  {price}
-                </span>
-              </>
-            ) : (
-              <span className="font-medium">{formatter.format(price)}</span>
-            )}
+            <span className="font-medium">{formatter.format(price)}</span>
           </div>
         </div>
       </CardHeader>
@@ -82,11 +52,19 @@ export function GameCard({
           {description}
         </p>
         <div className="mt-2 flex flex-wrap gap-1">
-          {categories.map((category) => (
-            <Badge key={category} variant="secondary" className="text-xs">
-              {category}
-            </Badge>
-          ))}
+          {Array.isArray(genre)
+            ? genre.map((category) => (
+                <Badge key={category.id} variant="secondary" className="text-xs">
+                  {category.name}
+                </Badge>
+              ))
+            : genre
+            ? (
+                <Badge key={genre.id} variant="secondary" className="text-xs">
+                  {genre.name}
+                </Badge>
+              )
+            : null}
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">

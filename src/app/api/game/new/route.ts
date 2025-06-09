@@ -31,6 +31,7 @@ const CreateGameTextFields = z
     tagIds: z.array(z.string()).optional().nullable(),
     version: z.string().optional().nullable(),
     versionDescription: z.string().optional().nullable(),
+    gameType: z.enum(["DOWNLOADABLE", "HTML"]), // <-- add gameType
   })
   .strict();
 
@@ -58,13 +59,25 @@ export async function POST(req: Request) {
   const rawTagIds = formData.get("tagIds");
   const rawVersion = formData.get("version");
   const rawVersionDescription = formData.get("versionDescription");
+  const rawGameType = formData.get("gameType");
 
-  // Convert tagIds from JSON string → string[]
+  // --- Improved: Validate required fields early ---
+  if (!rawTitle || typeof rawTitle !== "string" || rawTitle.trim().length < 8) {
+    return NextResponse.json({ error: "Title is required and must be at least 8 characters." }, { status: 400 });
+  }
+  if (!rawGameType || (rawGameType !== "DOWNLOADABLE" && rawGameType !== "HTML")) {
+    return NextResponse.json({ error: "Game type is required and must be DOWNLOADABLE or HTML." }, { status: 400 });
+  }
+
+  // --- Improved: Tag limit enforcement ---
   let parsedTagIds: string[] | null = null;
   if (typeof rawTagIds === "string") {
     try {
       const arr = JSON.parse(rawTagIds);
       if (Array.isArray(arr) && arr.every((x) => typeof x === "string")) {
+        if (arr.length > 10) {
+          return NextResponse.json({ error: "You can select up to 10 tags only." }, { status: 400 });
+        }
         parsedTagIds = arr;
       }
     } catch {
@@ -72,16 +85,27 @@ export async function POST(req: Request) {
     }
   }
 
+  // --- Improved: Price normalization (IDR, no decimals) ---
+  let normalizedPrice = 0;
+  if (typeof rawPrice === "string" && rawPrice.trim() !== "") {
+    normalizedPrice = Math.max(0, Math.round(Number(rawPrice)));
+  }
+
+  // --- Improved: Slug generation (unique, readable) ---
+  const slugBase =
+    (typeof rawTitle === "string"
+      ? rawTitle.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "")
+      : "game") + `-${Date.now()}`;
+
+  // --- Improved: Markdown sanitization (optional, for security) ---
+  // You may want to sanitize markdown here if you render it as HTML on the frontend.
+  // For now, just trim.
+  const safeDescription = typeof rawDescription === "string" ? rawDescription.trim() : null;
+
   const textFields = {
     title: typeof rawTitle === "string" ? rawTitle : "",
-    description:
-      typeof rawDescription === "string" && rawDescription.trim() !== ""
-        ? rawDescription
-        : null,
-    price:
-      typeof rawPrice === "string" && rawPrice.trim() !== ""
-        ? Number(rawPrice)
-        : 0,
+    description: safeDescription && safeDescription !== "" ? safeDescription : null,
+    price: normalizedPrice,
     status: typeof rawStatus === "string" ? rawStatus : "DRAFT",
     genreId:
       typeof rawGenreId === "string" && rawGenreId.trim() !== ""
@@ -97,6 +121,7 @@ export async function POST(req: Request) {
       rawVersionDescription.trim() !== ""
         ? rawVersionDescription
         : null,
+    gameType: rawGameType === "HTML" ? "HTML" : "DOWNLOADABLE",
   };
 
   // Validate with zod
@@ -120,42 +145,22 @@ export async function POST(req: Request) {
     tagIds,
     version,
     versionDescription,
+    gameType, // <-- add gameType
   } = parsed.data;
 
   // 4) Handle the cover image upload (if provided)
-  //    We expect a FormData entry named "image"
   let imageUrl: string | null = null;
   const maybeImage = formData.get("image");
   if (maybeImage instanceof File && maybeImage.size > 0) {
-    // Build a safe filename: e.g. timestamp-originalname
-    const imgName = `${Date.now()}-${maybeImage.name.replace(
-      /\s+/g,
-      "_"
-    )}`;
-    // Destination folder under /public/uploads/images/
+    const imgName = `${Date.now()}-${maybeImage.name.replace(/\s+/g, "_")}`;
     const imageFolder = path.join(process.cwd(), "public", "uploads", "images");
     await fs.mkdir(imageFolder, { recursive: true });
-
-    // Write file to disk
     const arrayBuffer = await maybeImage.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const destImagePath = path.join(imageFolder, imgName);
-    await fs.writeFile(destImagePath, buffer);
-
-    // Public‐facing URL:
+    await fs.writeFile(path.join(imageFolder, imgName), Buffer.from(arrayBuffer));
     imageUrl = `/uploads/images/${imgName}`;
   }
 
-  // 5) Create the Game row FIRST (without version) so we get game.id
-  //    We still attach imageUrl (if any) and connect tags/genre in one go.
-  //    We generate a slug from title + timestamp.
-  const slugBase =
-    title
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\-]/g, "") + `-${Date.now()}`;
-
+  // 5) Create the Game row
   const game = await prisma.game.create({
     data: {
       title,
@@ -165,56 +170,28 @@ export async function POST(req: Request) {
       price,
       status,
       genreId: genreId ?? null,
-      tags:
-        tagIds && tagIds.length > 0
-          ? {
-              create: tagIds.map((t) => ({
-                tag: {
-                  connect: { id: t },
-                },
-              })),
-            }
-          : undefined,
+      tags: tagIds && tagIds.length > 0 ? {
+        create: tagIds.map((t) => ({ tag: { connect: { id: t } } }))
+      } : undefined,
       authorId: session.user.id,
       updatedAt: new Date(),
+      gameType
     },
   });
 
-  // 6) If the user provided BOTH version && gameFile, process that now:
-  //    - Save the ZIP under /public/uploads/zips/
-  //    - Extract it into /public/uploads/games/{game.id}/{version}/
-  //    - Create a GameVersion record with fileUrl = `/uploads/games/{game.id}/{version}/`
+  // 6) Handle game version upload (if provided)
   const maybeZip = formData.get("gameFile");
   if (version && maybeZip instanceof File && maybeZip.size > 0) {
     const zipName = `${Date.now()}-${maybeZip.name.replace(/\s+/g, "_")}`;
     const zipFolder = path.join(process.cwd(), "public", "uploads", "zips");
     await fs.mkdir(zipFolder, { recursive: true });
-
     const arrayBuffer2 = await maybeZip.arrayBuffer();
-    const buffer2 = Buffer.from(arrayBuffer2);
     const savedZipPath = path.join(zipFolder, zipName);
-    await fs.writeFile(savedZipPath, buffer2);
-
-    // Now extract the ZIP into public/uploads/games/{game.id}/{version}/
-    const extractDir = path.join(
-      process.cwd(),
-      "public",
-      "uploads",
-      "games",
-      game.id,
-      version
-    );
+    await fs.writeFile(savedZipPath, Buffer.from(arrayBuffer2));
+    const extractDir = path.join(process.cwd(), "public", "uploads", "games", game.id, version);
     await fs.mkdir(extractDir, { recursive: true });
-    // Use unzipper to extract
-    await fsSync
-      .createReadStream(savedZipPath)
-      .pipe(unzipper.Extract({ path: extractDir }))
-      .promise();
-
-    // fileUrl should point at the folder (relative to /public)
+    await fsSync.createReadStream(savedZipPath).pipe(unzipper.Extract({ path: extractDir })).promise();
     const fileUrl = `/uploads/games/${game.id}/${version}/`;
-
-    // Create the GameVersion row in Prisma
     await prisma.gameVersion.create({
       data: {
         gameId: game.id,
@@ -226,9 +203,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // 7) Return the newly created Game (and optionally the version if you want)
-  //    We’ll just return the game record for now. If you want to include versions,
-  //    you can fetch them with “include: { versions: true }”.
+  // 7) Return the newly created Game (with relations)
   const result = await prisma.game.findUnique({
     where: { id: game.id },
     include: { tags: true, genre: true, versions: true },

@@ -1,7 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { usePathname } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import React, { useMemo } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ShoppingCart } from "lucide-react";
 
 export function AuthNavClient() {
   const { data: session } = authClient.useSession();
@@ -40,8 +40,17 @@ export function AuthNavClient() {
     );
   }
 
+  const isAdmin = session.user.role?.includes("admin") || false;
+
   return (
     <div className="flex items-center gap-2">
+      <Link
+        href="/cart"
+        className="relative flex items-center justify-center mr-2"
+        aria-label="Cart"
+      >
+        <ShoppingCart />
+      </Link>
       <Avatar className="cursor-pointer size-10">
         <AvatarImage src={session.user.image ?? undefined} />
         <AvatarFallback>{session.user.username}</AvatarFallback>
@@ -83,12 +92,22 @@ export function AuthNavClient() {
           <DropdownMenuItem asChild>
             <button
               type="button"
-              onClick={() => authClient.signOut()}
+              onClick={() => { authClient.signOut(); return redirect('/'); }}
               aria-label="Logout"
             >
               Logout
             </button>
           </DropdownMenuItem>
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Admin</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/admin">Admin Dashboard</Link>
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

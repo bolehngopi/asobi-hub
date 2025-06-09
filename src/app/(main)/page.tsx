@@ -3,8 +3,41 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Gamepad2, ShoppingCart, Users } from "lucide-react";
 import { GameCard } from "@/components/game-card";
+import prisma from "@/lib/prisma";
 
-export default function Home() {
+const features = [
+  {
+    title: "Massive Game Selection",
+    description:
+      "Thousands of games from indie gems to AAA titles, all in one place.",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Instant Play",
+    description:
+      "No downloads required. Play your favorite games directly in your browser.",
+    icon: Gamepad2,
+  },
+  {
+    title: "Active Community",
+    description:
+      "Connect with fellow gamers, compete in tournaments, and climb the leaderboards.",
+    icon: Users,
+  },
+];
+
+export default async function Home() {
+  // Fetch featured games: published, sorted by updatedAt desc, limit 4
+  const featuredGames = await prisma.game.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { updatedAt: "desc" },
+    take: 4,
+    include: {
+      genre: true,
+      author: true,
+    },
+  });
+
   return (
     <div className="flex flex-col mx-auto">
       {/* Hero Section */}
@@ -26,8 +59,8 @@ export default function Home() {
             Your Ultimate Gaming Experience
           </h1>
           <p className="max-w-xl text-muted-foreground md:text-xl">
-            Discover, buy, and play games all in one place. Join thousands of gamers on the platform
-            built for true gaming enthusiasts.
+            Discover, buy, and play games all in one place. Join thousands of
+            gamers on the platform built for true gaming enthusiasts.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
             <Button size="lg" asChild>
@@ -57,39 +90,10 @@ export default function Home() {
 
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {featuredGames.map((game) => (
-            <Link
+            <GameCard
               key={game.id}
-              href={`/marketplace/games/${game.slug}`}
-              className="group relative overflow-hidden rounded-lg transition-all hover:shadow-xl"
-            >
-              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg">
-                <Image
-                  src={game.image}
-                  alt={game.title}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent opacity-60" />
-                {game.discount && (
-                  <div className="absolute right-2 top-2 rounded-full bg-destructive px-2 py-1 text-xs font-medium">
-                    {game.discount}% OFF
-                  </div>
-                )}
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h3 className="font-semibold text-white">{game.title}</h3>
-                <div className="mt-1 flex items-center gap-2">
-                  {game.discountPrice ? (
-                    <>
-                      <span className="font-medium text-white">${game.discountPrice}</span>
-                      <span className="text-sm text-white/70 line-through">${game.price}</span>
-                    </>
-                  ) : (
-                    <span className="font-medium text-white">${game.price}</span>
-                  )}
-                </div>
-              </div>
-            </Link>
+              {...game}
+            />
           ))}
         </div>
 
@@ -107,7 +111,9 @@ export default function Home() {
       <section className="bg-muted py-20">
         <div className="container mx-auto">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Why Choose AsobiHub?</h2>
+            <h2 className="text-3xl font-bold tracking-tight">
+              Why Choose AsobiHub?
+            </h2>
             <p className="mt-4 text-muted-foreground">
               Everything you need for a complete gaming experience
             </p>
@@ -123,7 +129,9 @@ export default function Home() {
                   <feature.icon className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="mt-4 text-xl font-medium">{feature.title}</h3>
-                <p className="mt-2 text-muted-foreground">{feature.description}</p>
+                <p className="mt-2 text-muted-foreground">
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
@@ -138,13 +146,11 @@ export default function Home() {
               Ready to Start Your Gaming Journey?
             </h2>
             <p className="mt-4 max-w-2xl text-muted-foreground md:text-lg">
-              Join thousands of gamers today and discover a new world of gaming possibilities.
-              Create your account for free and start playing!
+              Join thousands of gamers today and discover a new world of gaming
+              possibilities. Create your account for free and start playing!
             </p>
-            <Button size="lg" className="mt-8">
-              <Link href="/auth/register">
-                Create an Account
-              </Link>
+            <Button size="lg" className="mt-8" asChild>
+              <Link href="/auth/register">Create an Account</Link>
             </Button>
           </div>
         </div>
@@ -152,56 +158,3 @@ export default function Home() {
     </div>
   );
 }
-
-const featuredGames = [
-  {
-    id: "1",
-    title: "Cyber Adventure 2077",
-    price: 59.99,
-    discountPrice: 39.99,
-    discount: 33,
-    image: "https://images.pexels.com/photos/7915264/pexels-photo-7915264.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    id: "2",
-    title: "Fantasy Quest IV",
-    price: 49.99,
-    discountPrice: null,
-    discount: null,
-    image: "https://images.pexels.com/photos/7915255/pexels-photo-7915255.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    id: "3",
-    title: "Space Explorer: Odyssey",
-    price: 39.99,
-    discountPrice: 29.99,
-    discount: 25,
-    image: "https://images.pexels.com/photos/1670977/pexels-photo-1670977.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    id: "4",
-    title: "Racing Evolution 2025",
-    price: 54.99,
-    discountPrice: null,
-    discount: null,
-    image: "https://images.pexels.com/photos/163696/playstation-controller-sony-controller-joystick-163696.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-];
-
-const features = [
-  {
-    title: "Massive Game Selection",
-    description: "Thousands of games from indie gems to AAA titles, all in one place.",
-    icon: ShoppingCart,
-  },
-  {
-    title: "Instant Play",
-    description: "No downloads required. Play your favorite games directly in your browser.",
-    icon: Gamepad2,
-  },
-  {
-    title: "Active Community",
-    description: "Connect with fellow gamers, compete in tournaments, and climb the leaderboards.",
-    icon: Users,
-  },
-];

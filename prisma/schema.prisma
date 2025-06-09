@@ -25,6 +25,13 @@ enum GameType {
   DOWNLOADABLE
 }
 
+enum TransactionStatus {
+  PENDING
+  PAID
+  SETTLED
+  EXPIRED
+}
+
 model User {
   id            String    @id
   name          String
@@ -47,6 +54,12 @@ model User {
   followers  Follow[] @relation("Following")
   followings Follow[] @relation("Follower")
 
+  role        String?
+  banned      Boolean?
+  banReason   String?
+  banExpires  DateTime?
+  Transaction Transaction[]
+
   @@unique([email])
   @@unique([username])
   @@map("user")
@@ -62,6 +75,8 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
 
   @@unique([token])
   @@map("session")
@@ -112,10 +127,11 @@ model Game {
   genreId     String?
   genre       Genre?     @relation(fields: [genreId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime   @updatedAt
 
-  versions GameVersion[]
-  tags     GameTag[]
+  versions         GameVersion[]
+  tags             GameTag[]
+  TransactionItems TransactionItem[]
 
   @@map("game")
 }
@@ -125,10 +141,11 @@ model GameVersion {
   gameId      String
   game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   version     String
+  size        Int
   fileUrl     String
   description String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
 
   @@map("game_version")
 }
@@ -176,4 +193,63 @@ model Follow {
 
   @@unique([followerId, followingId])
   @@map("follow")
+}
+
+model Transaction {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items       TransactionItem[]
+  totalAmount Int
+  status      TransactionStatus @default(PENDING)
+  paymentRef  String?
+  notes       String?
+
+  invoice   Invoice?
+  invoiceId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("transaction")
+}
+
+model TransactionItem {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  price Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([transactionId])
+  @@index([gameId])
+  @@map("transaction_item")
+}
+
+model Invoice {
+  id            String      @id @default(cuid())
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  invoiceId     String?   @unique
+  externalId    String   @unique
+  invoiceUrl    String
+  paymentMethod String?
+  amount        Int
+  status        String
+  expiryDate    DateTime
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice")
 }

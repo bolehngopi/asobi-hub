@@ -17,13 +17,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Clock, Gamepad2, ShoppingCart, User, Play } from "lucide-react";
+import { Trophy, Clock, Gamepad2, User, Play } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { authClient } from "@/lib/auth-client";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -127,8 +126,6 @@ export default async function UserPage({
   const { username } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
 
-  console.log(session);
-
   // Server action for follow/unfollow
   async function handleFollowAction(formData: FormData) {
     "use server";
@@ -154,6 +151,7 @@ export default async function UserPage({
         create: {
           followerId: userId,
           followingId: targetUser.id,
+          createdAt: new Date(),
         },
       });
     } else if (action === "unfollow") {
@@ -171,7 +169,9 @@ export default async function UserPage({
   const user = await prisma.user.findUnique({
     where: { username },
     include: {
-      games: true, // User's games
+      games: {
+        where: { authorId: undefined }, // This will be replaced below
+      },
       followers: {
         include: { follower: true },
       },
@@ -185,19 +185,19 @@ export default async function UserPage({
     notFound();
   }
 
+  // Fetch games authored by the user (robust to schema changes)
+  const authoredGames = await prisma.game.findMany({
+    where: { authorId: user.id, status: "PUBLISHED" },
+    orderBy: { createdAt: 'desc' },
+  });
+
   const userStats = {
-    totalGames: user.games.length,
+    totalGames: authoredGames.length,
     totalPlaytime: 0,
     achievements: 0,
     achievementPoints: 0,
     memberSince: user.createdAt.toLocaleDateString(),
   };
-
-  const recentGames: RecentGame[] = user.games.map((game) => ({
-    id: game.id,
-    title: game.title,
-    image: game.image,
-  }));
 
   // Prepare followers and followings as user arrays, excluding self
   const allFollowers = user.followers
@@ -249,7 +249,7 @@ export default async function UserPage({
                     <span className="font-medium">{allFollowings.length}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Games</span>
+                    <span className="text-sm text-muted-foreground">Games Authored</span>
                     <span className="font-medium">{userStats.totalGames}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -349,12 +349,12 @@ export default async function UserPage({
                       <CardHeader className="pb-2">
                         <CardTitle className="flex items-center text-lg">
                           <Gamepad2 className="mr-2 h-5 w-5" />
-                          Game Library
+                          Authored Games
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="text-3xl font-bold">{userStats.totalGames}</div>
-                        <p className="text-sm text-muted-foreground">Games in this collection</p>
+                        <p className="text-sm text-muted-foreground">Games authored by this user</p>
                       </CardContent>
                     </Card>
 
@@ -393,7 +393,7 @@ export default async function UserPage({
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {recentGames.length > 0 ? recentGames.map((game) => (
+                          {authoredGames.length > 0 ? authoredGames.map((game) => (
                             <div key={game.id} className="flex items-center gap-4 group hover:bg-primary/10 rounded transition-all p-2">
                               <div className="relative h-16 w-16 overflow-hidden rounded border bg-muted">
                                 <Image
@@ -472,13 +472,13 @@ export default async function UserPage({
 
                 {/* Games Tab */}
                 <TabsContent value="games" className="py-4">
-                  <h2 className="text-2xl font-bold">Games</h2>
+                  <h2 className="text-2xl font-bold">Authored Games</h2>
                   <p className="text-muted-foreground">
-                    Game library and collection
+                    Games created and published by this user
                   </p>
-                  {recentGames.length > 0 ? (
+                  {authoredGames.length > 0 ? (
                     <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {recentGames.map((game) => (
+                      {authoredGames.map((game) => (
                         <Card key={game.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
                           <div className="relative aspect-video w-full">
                             <Image
@@ -495,7 +495,7 @@ export default async function UserPage({
                           <CardContent className="p-4">
                             <div className="flex w-full items-center justify-between">
                               <Button size="sm" asChild>
-                                <a href={`/gaming/${game.id}`}>Play</a>
+                                <a href={`/game/${game.slug}`}>Play</a>
                               </Button>
                             </div>
                           </CardContent>

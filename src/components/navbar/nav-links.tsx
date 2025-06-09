@@ -27,14 +27,14 @@ export function NavbarLinks({ genres }: { genres: { name: string; description: s
             <NavigationMenuList className="flex items-center gap-6 text-sm">
               <NavigationMenuItem>
                 <NavigationMenuLink
-                  className="text-gray-500 transition hover:text-gray-500/75 dark:text-white dark:hover:text-white/75"
+                  className="transition hover:text-gray-500/75 dark:text-white dark:hover:text-white/75"
                   href="/marketplace"
                 >
                   Browse
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="text-gray-500 transition hover:text-gray-500/75 dark:text-white dark:hover:text-white/75">
+                <NavigationMenuTrigger className="transition bg-inherit hover:text-gray-500/75 dark:text-white dark:hover:text-white/75">
                   Genre
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -43,7 +43,7 @@ export function NavbarLinks({ genres }: { genres: { name: string; description: s
                       <ListItem
                         key={category.name}
                         title={category.name}
-                        href={`/marketplace/genre/${category.slug}`}
+                        href={`/marketplace?category=${category.slug}`}
                       >
                         {category.description ?? ""}
                       </ListItem>
@@ -64,7 +64,7 @@ export function NavbarLinks({ genres }: { genres: { name: string; description: s
           {/* Hamburger Button */}
           <Button
             variant={"ghost"}
-            className="md:hidden p-2 text-gray-500 hover:text-gray-500/75 dark:text-white dark:hover:text-white/75"
+            className="md:hidden p-2 hover:text-gray-500/75 dark:text-white dark:hover:text-white/75"
             aria-label="Toggle menu"
             onClick={() => setMobileOpen((v) => !v)}
             type="button"

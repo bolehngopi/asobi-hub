@@ -17,14 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Search } from "lucide-react";
 import { GameCard } from "@/components/game-card";
-
-interface Game {
-  id: number;
-  name: string;
-  price: number;
-  rating: number;
-  // ...other fields
-}
+import { Game } from "@/generated/prisma";
 
 interface FetchResponse {
   games: Game[];
