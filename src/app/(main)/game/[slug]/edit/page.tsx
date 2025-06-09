@@ -2,8 +2,8 @@ import GameForm from "@/components/forms/game-form";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
-export default async function EditGamePage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function EditGamePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   // Fetch game data from the database using Prisma
   const game = await prisma.game.findUnique({
     where: { slug },
@@ -26,6 +26,7 @@ export default async function EditGamePage({ params }: { params: { slug: string 
           You can always return to add more versions or update metadata later!
         </p>
       </div>
-    </div>);
+    </div>
+  );
 }
 

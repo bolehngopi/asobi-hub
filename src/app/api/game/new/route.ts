@@ -192,10 +192,12 @@ export async function POST(req: Request) {
     await fs.mkdir(extractDir, { recursive: true });
     await fsSync.createReadStream(savedZipPath).pipe(unzipper.Extract({ path: extractDir })).promise();
     const fileUrl = `/uploads/games/${game.id}/${version}/`;
+    const size = Math.round(maybeZip.size / 1024 / 1024); // size in MB
     await prisma.gameVersion.create({
       data: {
         gameId: game.id,
         version,
+        size,
         description: versionDescription,
         fileUrl,
         updatedAt: new Date(),

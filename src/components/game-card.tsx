@@ -13,6 +13,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatter } from "@/lib/format";
 import { Game, Prisma, } from "@/generated/prisma";
 
+type GameCardProps = Prisma.GameGetPayload<{ include: { genre: true; author: true } }>;
+
 export function GameCard({
   slug,
   title,
@@ -22,7 +24,7 @@ export function GameCard({
   image,
   genre,
   author,
-}: Prisma.GameGetPayload<{include: { genre: true, author: true } }>) {
+}: GameCardProps) {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="aspect-[16/9] w-full relative">

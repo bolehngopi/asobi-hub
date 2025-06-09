@@ -17,10 +17,10 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Search } from "lucide-react";
 import { GameCard } from "@/components/game-card";
-import { Game } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma";
 
 interface FetchResponse {
-  games: Game[];
+  games: Prisma.GameGetPayload<{ include: { genre: true; author: true } }>[];
   categories: string[];
 }
 
@@ -65,7 +65,7 @@ export default function MarketplacePage() {
   const [localSearch, setLocalSearch] = useState(initialSearch);
   const [localCategory, setLocalCategory] = useState(initialCategory);
   const [localSort, setLocalSort] = useState(initialSort);
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<Prisma.GameGetPayload<{ include: { genre: true; author: true } }>[]>([]);
   const [categories, setCategories] = useState<string[]>(["All Categories"]);
   const [loading, setLoading] = useState(true);
 

@@ -15,12 +15,8 @@ async function getPageParam(searchParams: SearchParams) {
   return Array.isArray(p) ? parseInt(p[0], 10) || 1 : parseInt(p, 10) || 1;
 }
 
-export default async function AdminGamesPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const page = await getPageParam(await searchParams || {});
+export default async function AdminGamesPage({ searchParams }: any) {
+  const page = await getPageParam(searchParams || {});
   const skip = (page - 1) * PAGE_SIZE;
 
   const gamesWithExtra = await prisma.game.findMany({

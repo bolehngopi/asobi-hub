@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { authClient } from "@/lib/auth-client";
 import { BanUserDialog } from "@/components/dialog/BanUserDialog";
 import { UnbanUserDialog } from "@/components/dialog/UnbanUserDialog";
+import { banUserAction } from "@/lib/action/banUserAction";
 
 const PAGE_SIZE = 10;
 
@@ -19,22 +20,12 @@ function getPageParam(searchParams: SearchParams): number {
   return isNaN(n) || n < 1 ? 1 : n;
 }
 
-export async function banUserAction(formData: FormData) {
-  const userId = formData.get("userId") as string;
-  const banReason = (formData.get("banReason") as string) || "";
-  const banExpiresIn = formData.get("banExpiresIn") as string;
-  const expires = banExpiresIn ? parseInt(banExpiresIn, 10) : undefined;
-
-  await authClient.admin.banUser({ userId, banReason, banExpiresIn: expires });
-  revalidatePath("/admin/users");
-}
-
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: any;
 }) {
-  const page = getPageParam(searchParams || {});
+  const page = await getPageParam(searchParams || {});
   const skip = (page - 1) * PAGE_SIZE;
 
   // Fetch one extra to detect next page without count()

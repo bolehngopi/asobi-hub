@@ -9,8 +9,9 @@ import { formatter } from "@/lib/format";
 import { useCart } from "@/store/cart-store";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Session } from "@/lib/auth-client";
 
-export default function CartClient({ session }) {
+export default function CartClient({ session }: { session: Session | null }) {
   const { items: cartItems, selected, toggleSelect, remove, clear } = useCart();
   const router = useRouter();
   const [loading, setLoading] = useState(false);

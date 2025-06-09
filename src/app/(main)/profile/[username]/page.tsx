@@ -29,12 +29,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-type RecentGame = {
-  id: string;
-  title: string;
-  image: string | null;
-};
-
 type Achievement = {
   id: string;
   title: string;
@@ -560,9 +554,9 @@ export default async function UserPage({
 }
 
 // Add dynamic metadata export for Next.js App Router
-export async function generateMetadata({ params }: { params: { username: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   // Optionally fetch user data for richer metadata
-  const username = params.username;
+  const { username } = await params;
   return {
     title: `${username} | Profile | AsobiHub`,
     description: `View the gaming profile, followers, and achievements of ${username} on AsobiHub.`,
