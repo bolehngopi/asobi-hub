@@ -558,12 +558,12 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   // Optionally fetch user data for richer metadata
   const { username } = await params;
   return {
-    title: `${username} | Profile | AsobiHub`,
+    title: `${username} | Profile`,
     description: `View the gaming profile, followers, and achievements of ${username} on AsobiHub.`,
     openGraph: {
-      title: `${username} | Profile | AsobiHub`,
+      title: `${username} | Profile`,
       description: `View the gaming profile, followers, and achievements of ${username} on AsobiHub.`,
-      url: `https://asobihub.com/profile/${username}`,
+      url: `https://asobi-hub.vercel.app/profile/${username}`,
       type: 'profile',
       siteName: 'AsobiHub',
       images: [
@@ -578,7 +578,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
     },
     twitter: {
       card: 'summary',
-      title: `${username} | Profile | AsobiHub`,
+      title: `${username} | Profile`,
       description: `View the gaming profile, followers, and achievements of ${username} on AsobiHub.`,
       site: '@asobihub',
       creator: '@asobihub',

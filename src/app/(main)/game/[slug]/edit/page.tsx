@@ -14,7 +14,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ slug:
   // Transform tags to match the expected initialData shape
   const initialData = {
     ...game,
-    tags: game.tags?.map((t: any) => ({ tagId: t.tagId ?? t.id, ...t })),
+    tags: game.tags?.map((t: { tagId?: string; id?: string; [key: string]: any }) => ({ tagId: t.tagId ?? t.id, ...t })),
   };
 
   return (

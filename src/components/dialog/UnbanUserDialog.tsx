@@ -1,6 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { use, useTransition } from 'react';
+import { useTransition } from 'react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -26,7 +26,7 @@ export function UnbanUserDialog({ user }: UnbanUserDialogProps) {
   async function handleUnban() {
     startTransition(async () => {
       try {
-        const unbannedUser = await authClient.admin.unbanUser({
+        await authClient.admin.unbanUser({
           userId: user.id,
         });
         toast.success('User unbanned successfully');

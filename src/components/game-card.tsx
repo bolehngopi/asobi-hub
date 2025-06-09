@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatter } from "@/lib/format";
-import { Game, Prisma, } from "@/generated/prisma";
+import { Prisma, } from "@/generated/prisma";
 
 type GameCardProps = Prisma.GameGetPayload<{ include: { genre: true; author: true } }>;
 

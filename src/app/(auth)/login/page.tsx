@@ -1,32 +1,41 @@
-import { Gamepad } from "lucide-react"
-
 import { LoginForm } from "@/components/forms/login-form";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <Gamepad className="size-4" />
-            </div>
-            AsobiHub
-          </a>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <LoginForm callbackUrl={(await searchParams).callbackUrl || undefined} />
-          </div>
-        </div>
-      </div>
-      <div className="bg-muted relative hidden lg:block">
-        <img
-          src="/placeholder.svg"
-          alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-        />
-      </div>
-    </div>
+    <LoginForm callbackUrl={(await searchParams).callbackUrl || undefined} />
   )
+}
+
+export async function generateMetadata() {
+  return {
+    title: "Login",
+    description: "Log in to your AsobiHub account to join the gaming community, track achievements, and connect with other players.",
+    openGraph: {
+      title: "Login",
+      description: "Log in to your AsobiHub account to join the gaming community, track achievements, and connect with other players.",
+      url: "https://asobi-hub.vercel.app/login",
+      type: "website",
+      siteName: "AsobiHub",
+      images: [
+        {
+          url: "/file.svg",
+          width: 600,
+          height: 400,
+          alt: "AsobiHub login",
+        },
+      ],
+      locale: "en_US",
+    },
+    twitter: {
+      card: "summary",
+      title: "Login",
+      description: "Log in to your AsobiHub account to join the gaming community, track achievements, and connect with other players.",
+      site: "@asobihub",
+      creator: "@asobihub",
+      images: ["/file.svg"],
+    },
+    alternates: {
+      canonical: "/login",
+    },
+  };
 }

@@ -101,19 +101,27 @@ export default function MarketplacePage() {
       const newParams = new URLSearchParams(searchParams.toString());
       // search
       if (filters.search !== undefined) {
-        filters.search === "" ? newParams.delete("search") : newParams.set("search", filters.search);
+        if (filters.search === "") {
+          newParams.delete("search");
+        } else {
+          newParams.set("search", filters.search);
+        }
       }
       // category
       if (filters.category !== undefined) {
-        ["", "All Categories"].includes(filters.category)
-          ? newParams.delete("category")
-          : newParams.set("category", filters.category);
+        if (["", "All Categories"].includes(filters.category)) {
+          newParams.delete("category");
+        } else {
+          newParams.set("category", filters.category);
+        }
       }
       // sort
       if (filters.sort !== undefined) {
-        ["", "newest"].includes(filters.sort)
-          ? newParams.delete("sort")
-          : newParams.set("sort", filters.sort);
+        if (["", "newest"].includes(filters.sort)) {
+          newParams.delete("sort");
+        } else {
+          newParams.set("sort", filters.sort);
+        }
       }
       // priceMin / priceMax
       if (filters.priceMin !== undefined) newParams.set("priceMin", String(filters.priceMin));
@@ -123,6 +131,7 @@ export default function MarketplacePage() {
     500
   );
 
+  // --- Debounced: sync local filter state to URL ---
   useEffect(() => {
     debouncedUpdateURL({
       search: localSearch,
@@ -131,7 +140,7 @@ export default function MarketplacePage() {
       priceMin: localPriceRange[0],
       priceMax: localPriceRange[1],
     });
-  }, [localSearch, localCategory, localSort, localPriceRange[0], localPriceRange[1], debouncedUpdateURL]);
+  }, [localSearch, localCategory, localSort, localPriceRange, debouncedUpdateURL]);
 
   // --- Fetch data when URL params change ---
   useEffect(() => {

@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useCart } from "@/store/cart-store";
 import { useMemo } from "react";
-import { formatter } from "@/lib/format";
 
 export default function GameCartButton({ game, session }: { game: any; session: any }) {
   const { items: cartItems, add } = useCart();

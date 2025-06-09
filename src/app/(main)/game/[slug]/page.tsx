@@ -184,12 +184,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     `Play ${game.title} by ${game.author?.displayUsername || game.author?.username} on AsobiHub.`;
 
   return {
-    title: `${game.title} | AsobiHub`,
+    title: `${game.title}`,
     description,
     openGraph: {
-      title: `${game.title} | AsobiHub`,
+      title: `${game.title}`,
       description,
-      url: `https://asobihub.com/game/${slug}`,
+      url: `https://asobi-hub.vercel.app/game/${slug}`,
       type: "website",
       siteName: "AsobiHub",
       images: [
@@ -204,7 +204,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     twitter: {
       card: "summary_large_image",
-      title: `${game.title} | AsobiHub`,
+      title: `${game.title}`,
       description,
       site: "@asobihub",
       creator: "@asobihub",

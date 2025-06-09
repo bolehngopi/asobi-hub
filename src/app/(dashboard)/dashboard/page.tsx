@@ -8,9 +8,10 @@ import { Trash2 } from "lucide-react";
 import { Metadata } from "next";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 export const metadata: Metadata = {
-  title: "Dashboard | AsobiHub",
+  title: "Dashboard",
   description:
     "Manage your games, view stats, and create new projects on your AsobiHub dashboard.",
 };
@@ -61,7 +62,7 @@ export default async function DashboardPage() {
             </Card>
           ) : (
             games.map((game) => {
-              const rating = (game as any).stars ?? 0;
+              const rating = (game).stars ?? 0;
               return (
                 <Card
                   key={game.id}
@@ -69,9 +70,11 @@ export default async function DashboardPage() {
                 >
                   <div className="w-24 h-16 bg-muted flex items-center justify-center rounded overflow-hidden border">
                     {game.image ? (
-                      <img
+                      <Image
                         src={game.image}
                         alt={game.title}
+                        width={96}
+                        height={64}
                         className="object-cover w-full h-full"
                       />
                     ) : (

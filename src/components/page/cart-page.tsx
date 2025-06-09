@@ -10,6 +10,7 @@ import { useCart } from "@/store/cart-store";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Session } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 export default function CartClient({ session }: { session: Session | null }) {
   const { items: cartItems, selected, toggleSelect, remove, clear } = useCart();
@@ -40,8 +41,9 @@ export default function CartClient({ session }: { session: Session | null }) {
       clear();
       router.push(data.invoiceUrl || "/dashboard/transactions");
     } catch (err) {
-      // Optionally show a toast/notification
-      alert("Checkout failed. Please try again.");
+      toast.error("Checkout failed. Please try again.", {
+        description: err instanceof Error ? err.message : "An unexpected error occurred.",
+      });
     } finally {
       setLoading(false);
     }

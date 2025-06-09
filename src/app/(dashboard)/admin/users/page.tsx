@@ -1,12 +1,9 @@
 'use server';
-import { revalidatePath } from "next/cache";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import prisma from "@/lib/prisma";
-import { authClient } from "@/lib/auth-client";
 import { BanUserDialog } from "@/components/dialog/BanUserDialog";
 import { UnbanUserDialog } from "@/components/dialog/UnbanUserDialog";
-import { banUserAction } from "@/lib/action/banUserAction";
 
 const PAGE_SIZE = 10;
 

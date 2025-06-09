@@ -81,14 +81,10 @@ export default async function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {recentUsers.map(u => (
-                  <li key={`u-${u.id}`}>User <span className="font-semibold">{u.name}</span> registered ({new Date(u.createdAt).toLocaleString()}).</li>
-                ))}
-                {recentGames.map(g => (
-                  <li key={`g-${g.id}`}>Game <span className="font-semibold">{g.title}</span> added ({new Date(g.createdAt).toLocaleString()}).</li>
-                ))}
-                {recentOrders.map(o => (
-                  <li key={`o-${o.id}`}>Order #<span className="font-semibold">{o.id}</span> completed (${o.totalAmount.toFixed(2)}) ({new Date(o.createdAt).toLocaleString()}).</li>
+                {activities.map(activity => (
+                  <li key={activity.id}>
+                    {activity.label} ({activity.date instanceof Date ? activity.date.toLocaleString() : new Date(activity.date).toLocaleString()}).
+                  </li>
                 ))}
               </ul>
             </CardContent>

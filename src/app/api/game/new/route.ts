@@ -47,6 +47,7 @@ export async function POST(req: Request) {
   try {
     formData = await req.formData();
   } catch (e) {
+    console.log("Error parsing form data:", e);
     return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
   }
 

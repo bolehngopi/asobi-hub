@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -37,13 +36,8 @@ export default function GameForm({ onSuccess, initialData }: { onSuccess?: () =>
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
 
-  // Game upload (optional)
-  const [gameFile, setGameFile] = useState<File | null>(null);
-
   // Add support for gameType (DOWNLOADABLE/HTML) from schema
   const [gameType, setGameType] = useState<"DOWNLOADABLE" | "HTML">("DOWNLOADABLE");
-
-  const [showPreview, setShowPreview] = useState(false);
 
   // Fetch genres & tags
   useEffect(() => {
@@ -74,12 +68,6 @@ export default function GameForm({ onSuccess, initialData }: { onSuccess?: () =>
     } else {
       setImagePreview("");
     }
-  };
-
-  // When the user picks a game build file
-  const onGameFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setGameFile(file);
   };
 
   // If initialData is provided (for edit), initialize state from it
@@ -291,7 +279,6 @@ export default function GameForm({ onSuccess, initialData }: { onSuccess?: () =>
             <Input
               type="file"
               id="game-file"
-              onChange={onGameFileChange}
               disabled={loading}
               accept={gameType === "HTML" ? ".zip" : undefined}
             />

@@ -29,7 +29,7 @@ export function BanUserDialog({ user }: BanUserDialogProps) {
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       try {
-        const res = await authClient.admin.banUser({
+        await authClient.admin.banUser({
           userId: user.id,
           // Optional (if not provided, the default ban reason will be used - No reason)
           banExpiresIn: formData.get('banExpiresIn')
