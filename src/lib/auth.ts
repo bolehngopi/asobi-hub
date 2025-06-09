@@ -26,11 +26,7 @@ export const auth = betterAuth({
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60 // Cache duration in seconds
+      maxAge: 5 * 60
     }
   },
-  trustedOrigins: [
-    process.env.BETTER_AUTH_URL as string,
-    'https://creative-killdeer-pleased.ngrok-free.app'
-  ]
 })
