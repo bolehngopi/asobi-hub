@@ -8,7 +8,6 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { formatter } from "@/lib/format";
 import GameCartButton from "@/components/page/game-cart-button";
-import { TransactionStatus } from "@/generated/prisma/enums";
 
 export default async function GamePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -29,6 +28,16 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
   if (game.status !== "PUBLISHED" && (!session || !session.user || session.user.id !== game.authorId)) {
     return notFound();
   }
+
+  const hasPurchased = await prisma.transactionItem.findFirst({
+    where: {
+      gameId: game.id,
+      transaction: {
+        userId: session?.user?.id,
+        status: "PAID",
+      },
+    },
+  })
   
   const latestVersion = game.versions[0];
 
@@ -79,7 +88,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
             </div>
           </details>
           {/* Download/Purchase Section */}
-          {game.price === 0 ? (
+          {game.price === 0 || hasPurchased ? (
             <div>
               <h2 className="text-lg font-bold mb-2">Download</h2>
               {game.versions.length > 0 ? (

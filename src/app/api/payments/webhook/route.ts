@@ -5,7 +5,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Validate the webhook header
     const signature = request.headers.get("X-Callback-Token");
 
     if (!process.env.XENDIT_WEBHOOK_SECRET) {
@@ -17,7 +16,6 @@ export async function POST(request: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    // Find the invoice and its transaction
     const invoice = await prisma.invoice.findUnique({
       where: { externalId: body.external_id, AND: { status: "PENDING", amount: body.paid_amount } },
       include: {
@@ -32,7 +30,6 @@ export async function POST(request: Request) {
       return new Response("Invoice not found", { status: 404 });
     }
 
-    // Update invoice fields
     await prisma.invoice.update({
       data: {
         paymentMethod: body.payment_method,
@@ -43,7 +40,6 @@ export async function POST(request: Request) {
       where: { externalId: body.external_id },
     });
 
-    // Map Xendit status to TransactionStatus enum
     let newStatus: TransactionStatus | undefined;
     switch (body.status) {
       case "PAID":

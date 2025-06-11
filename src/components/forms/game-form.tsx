@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import MDEditor from '@uiw/react-md-editor';
 import rehypeSanitize from "rehype-sanitize";
+import { createGameAction } from "@/lib/action/createGameAction";
+import { editGameAction } from "@/lib/action/editGameAction";
 
 export default function GameForm({ onSuccess, initialData }: { onSuccess?: () => void, initialData?: any }) {
   const [title, setTitle] = useState("");
@@ -35,6 +37,7 @@ export default function GameForm({ onSuccess, initialData }: { onSuccess?: () =>
   // Image upload
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [gameFile, setGameFile] = useState<File | null>(null);
 
   // Add support for gameType (DOWNLOADABLE/HTML) from schema
   const [gameType, setGameType] = useState<"DOWNLOADABLE" | "HTML">("DOWNLOADABLE");
@@ -102,16 +105,16 @@ export default function GameForm({ onSuccess, initialData }: { onSuccess?: () =>
       if (genreId) formData.append("genreId", genreId);
       if (tagIds.length) formData.append("tagIds", JSON.stringify(tagIds));
       if (imageFile) formData.append("image", imageFile);
-      // If editing, POST to /api/game/[slug]/edit, else POST to /api/game/new
-      let endpoint = "/api/game/new";
-      if (initialData && initialData.slug) endpoint = `/api/game/${initialData.slug}/edit`;
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.message || (initialData ? "Failed to update game" : "Failed to create game"));
+      if (gameFile) formData.append("gameFile", gameFile);
+      // If editing, call edit action, else call create action
+      let result;
+      if (initialData && initialData.slug) {
+        result = await editGameAction(formData, initialData.slug);
+      } else {
+        result = await createGameAction(formData);
+      }
+      if (result?.error) {
+        throw new Error(result.error);
       }
       toast.success(initialData ? "Game updated successfully!" : "Game created successfully!");
       if (onSuccess) onSuccess();
@@ -124,7 +127,7 @@ export default function GameForm({ onSuccess, initialData }: { onSuccess?: () =>
 
   return (
     <Card className="w-full p-6">
-      <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-6" onSubmit={handleSubmit} encType="multipart/form-data">
         {/* Title */}
         <div className="flex flex-col gap-2">
           <Label htmlFor="game-title">Title</Label>
@@ -279,7 +282,12 @@ export default function GameForm({ onSuccess, initialData }: { onSuccess?: () =>
             <Input
               type="file"
               id="game-file"
+              name="gameFile"
               disabled={loading}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setGameFile(file);
+              }}
               accept={gameType === "HTML" ? ".zip" : undefined}
             />
             <p className="text-xs text-muted-foreground">

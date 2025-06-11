@@ -148,6 +148,7 @@ model GameVersion {
   updatedAt   DateTime @updatedAt
 
   @@map("game_version")
+  @@unique([gameId, version], name: "gameId_version_unique")
 }
 
 model Genre {
@@ -239,7 +240,6 @@ model Invoice {
   externalId  String      @unique
   transaction Transaction @relation(fields: [externalId], references: [id], onDelete: Cascade)
 
-  invoiceId     String?  @unique
   invoiceUrl    String
   paymentMethod String?
   amount        Int

@@ -5,6 +5,7 @@ import { CreateInvoiceRequest } from "xendit-node/invoice/models";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { Invoice } from "@/lib/xendit";
+import { TransactionStatus } from "@/generated/prisma";
 
 export async function POST(request: Request) {
   try {
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
         id: orderId,
         userId: session.user.id,
         totalAmount,
-        status: 'PENDING',
+        status: TransactionStatus.PENDING,
         notes: invoiceData.description,
         items: {
           create: products.map((product) => ({
@@ -79,11 +80,10 @@ export async function POST(request: Request) {
 
     const createdInvoice = await prisma.invoice.create({
       data: {
-        transactionId: transaction.id,
-        invoiceId: invoice.id ?? "",
+        id: invoice.id ?? "",
         externalId: orderId,
         amount: totalAmount,
-        status: 'PENDING',
+        status: TransactionStatus.PENDING,
         invoiceUrl: invoice.invoiceUrl,
         expiryDate: new Date(invoice.expiryDate),
         paymentMethod: invoice.paymentMethod ?? "",
