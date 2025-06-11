@@ -7,13 +7,12 @@ import path from "path";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { CreateGameTextFields } from "../validators/create-game";
+import { handleGameVersionUpload } from "./handleGameUploads";
 
 export async function createGameAction(formData: FormData) {
-  // 1) Auth
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized", status: 401 };
 
-  // 3) Pull out textual fields
   const rawTitle = formData.get("title");
   const rawDescription = formData.get("description");
   const rawPrice = formData.get("price");
@@ -132,8 +131,8 @@ export async function createGameAction(formData: FormData) {
   const maybeZip = formData.get("gameFile") as Blob | null;
   await handleGameVersionUpload(
     game.id,
-    null,                   // null → handler will use timestamp “v{Date.now()}”
-    parsed.data.versionDescription,
+    null,
+    parsed.data.versionDescription ?? null,
     maybeZip
   );
 

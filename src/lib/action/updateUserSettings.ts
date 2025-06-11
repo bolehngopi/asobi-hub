@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { authClient } from "../auth-client";
-import path from "path";
 
 export async function updateUserSettings(formData: FormData) {
   const session = await auth.api.getSession({ headers: await headers() });
